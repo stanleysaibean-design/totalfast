@@ -32,6 +32,12 @@ const VERDICT_STYLE: Record<
   },
 };
 
+export const VERDICT_LABEL: Record<Verdict, string> = {
+  compliant: VERDICT_STYLE.compliant.label,
+  not_compliant: VERDICT_STYLE.not_compliant.label,
+  uncertain: VERDICT_STYLE.uncertain.label,
+};
+
 interface Props {
   result: CheckResult;
   ruleSet: RuleSet;
@@ -49,11 +55,13 @@ export function VerdictCard({ result, ruleSet, title }: Props) {
   const [showAll, setShowAll] = useState(false);
   const v = VERDICT_STYLE[result.verdict];
   const triggers = uniqueByIngredient(result.triggers);
-  const others = result.findings.filter((f) => !result.triggers.includes(f));
+  // Repeat spellings of a trigger ("wheat flour" inside "enriched wheat flour")
+  // still appear in the full list, with their own mark and reason.
+  const others = result.findings.filter((f) => !triggers.includes(f));
 
   return (
     <View style={styles.card} accessibilityRole="summary">
-      <ThemedView type={v.background} style={styles.header}>
+      <ThemedView type={v.background} style={styles.header} accessibilityLiveRegion="polite">
         <SymbolView name={v.icon} size={28} tintColor={theme[v.color]} />
         <View style={styles.headerText}>
           {title ? (

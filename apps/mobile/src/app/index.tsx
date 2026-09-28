@@ -1,12 +1,12 @@
-import { useMemo, useState } from 'react';
-import { Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { useEffect, useMemo, useState } from 'react';
+import { AccessibilityInfo, Pressable, StyleSheet, TextInput, View } from 'react-native';
 
 import { Button } from '@/components/button';
 import { DietChip } from '@/components/diet-chip';
 import { Screen } from '@/components/screen';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { VerdictCard } from '@/components/verdict-card';
+import { VERDICT_LABEL, VerdictCard } from '@/components/verdict-card';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { checkItem } from '@/lib/engine';
@@ -24,21 +24,26 @@ const EXAMPLES = [
 /** Type one ingredient or paste a whole label, and get a verdict for the active diet. */
 export default function CheckScreen() {
   const theme = useTheme();
-  const { diet } = useDiet();
+  const { diet, today } = useDiet();
   const [text, setText] = useState('');
-  const [checked, setChecked] = useState<string | null>(null);
+  // A fresh object per press, so pressing Check again always recomputes.
+  const [checked, setChecked] = useState<{ text: string } | null>(null);
 
-  // Re-run when the diet changes so the verdict never shows stale rules.
+  // Re-run when the diet or the day changes so the verdict never shows stale rules.
   const result = useMemo(
-    () => (checked ? checkItem({ name: 'Your check', ingredientsText: checked }, diet.ruleSet) : null),
-    [checked, diet],
+    () => (checked ? checkItem({ name: 'Your check', ingredientsText: checked.text }, diet.ruleSet, today) : null),
+    [checked, diet, today],
   );
+
+  useEffect(() => {
+    if (result) AccessibilityInfo.announceForAccessibility(`${VERDICT_LABEL[result.verdict]}. ${result.summary}`);
+  }, [result]);
 
   const run = (value = text) => {
     const trimmed = value.trim();
     if (!trimmed) return;
     setText(value);
-    setChecked(trimmed);
+    setChecked({ text: trimmed });
   };
 
   return (

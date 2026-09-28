@@ -1,6 +1,6 @@
 export * from './types.ts';
 export { ComplianceEngine, type CheckOptions } from './engine.ts';
-export { parseIngredients, flatten, type ParsedIngredient } from './parse.ts';
+export { parseIngredients, parseLabel, flatten, type ParsedIngredient, type ParsedLabel } from './parse.ts';
 export { IngredientIndex, normalize, recipeLineToIngredient } from './resolve.ts';
 export { CALENDARS, westernEaster, westernLent } from './calendar.ts';
 export { INGREDIENTS } from './data/ingredients.ts';

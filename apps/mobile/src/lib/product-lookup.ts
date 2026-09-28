@@ -13,10 +13,29 @@ const TIMEOUT_MS = 10_000;
 // pages set User-Agent, so it is only sent from the native apps.
 const USER_AGENT = 'TotalFast/0.1 (https://github.com/stanleysaibean-design/totalfast)';
 
-/** Keeps only digits; UPC-E, EAN-8, UPC-A, EAN-13 and GTIN-14 are 8 to 14 digits. */
+/**
+ * Returns the digits of a plausible grocery barcode, or undefined. Accepts
+ * EAN-8 / UPC-E (8 digits), UPC-A (12), EAN-13 (13) and GTIN-14 (14). For 12
+ * to 14 digits the GS1 check digit must match, which catches most typos in
+ * typed numbers. UPC-E's check digit belongs to its expanded UPC-A form, so
+ * 8-digit codes are accepted as typed.
+ */
 export function normalizeBarcode(raw: string): string | undefined {
   const digits = raw.replace(/\D/g, '');
-  return digits.length >= 8 && digits.length <= 14 ? digits : undefined;
+  if (digits.length === 8) return digits;
+  if (![12, 13, 14].includes(digits.length)) return undefined;
+  return hasValidCheckDigit(digits) ? digits : undefined;
+}
+
+/** GS1 mod-10: weights 3,1,3,1... from the digit left of the check digit. */
+export function hasValidCheckDigit(digits: string): boolean {
+  const body = digits.slice(0, -1);
+  let sum = 0;
+  for (let i = 0; i < body.length; i++) {
+    const d = Number(body[body.length - 1 - i]);
+    sum += i % 2 === 0 ? d * 3 : d;
+  }
+  return (10 - (sum % 10)) % 10 === Number(digits.at(-1));
 }
 
 /**
@@ -38,8 +57,9 @@ export async function lookupBarcode(barcode: string): Promise<LookupResult> {
     const item = fromOpenFoodFacts(body);
     if (!item) return { kind: 'no-ingredients', barcode, name: body.product.product_name?.trim() || undefined };
     return { kind: 'found', barcode, item };
-  } catch (e) {
-    const aborted = e instanceof Error && e.name === 'AbortError';
+  } catch {
+    // expo/fetch rejects an abort with its own error type, so ask the signal.
+    const aborted = controller.signal.aborted;
     return {
       kind: 'error',
       barcode,

@@ -11,7 +11,9 @@ export function Screen({ title, children }: PropsWithChildren<{ title: string }>
   return (
     <ThemedView style={styles.fill}>
       <SafeAreaView style={styles.fill} edges={['top', 'left', 'right']}>
-        <KeyboardAvoidingView style={styles.fill} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        {/* Android draws edge to edge, so the window no longer resizes for the
+            keyboard; padding keeps focused inputs visible on both platforms. */}
+        <KeyboardAvoidingView style={styles.fill} behavior={Platform.OS === 'web' ? undefined : 'padding'}>
           <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
             <ThemedText type="subtitle" accessibilityRole="header">
               {title}

@@ -143,6 +143,10 @@ export const INGREDIENTS: Ingredient[] = [
   i('anchovy', ['fish'], ['anchovies']),
   i('fish-sauce', ['fish'], []),
   i('shrimp', ['shellfish'], ['prawns']),
+  // Generic allergen names, as printed in "Contains:" statements.
+  i('fish', ['fish'], ['white fish']),
+  i('shellfish', ['shellfish'], ['crustacean shellfish', 'crustaceans', 'crustacean', 'molluscs', 'mollusks']),
+  i('tree-nuts', ['nut'], ['tree nut']),
 
   // sweeteners
   i('sugar', ['added-sugar'], ['cane sugar', 'organic cane sugar', 'brown sugar', 'powdered sugar', 'evaporated cane juice', 'raw sugar', 'turbinado sugar', 'coconut sugar', 'dextrose', 'sucrose', 'invert sugar', 'fructose']),

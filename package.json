@@ -9,6 +9,6 @@
     "test": "npm test --workspace @total-fast/engine",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "lint": "npm run lint --workspace @total-fast/mobile",
-    "app": "npm start --workspace @total-fast/mobile"
+    "app": "npm start --workspace @total-fast/mobile --"
   }
 }

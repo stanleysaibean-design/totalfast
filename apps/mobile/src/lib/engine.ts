@@ -14,7 +14,8 @@ import {
  */
 const engine = new ComplianceEngine(INGREDIENTS);
 
-export function checkItem(item: Checkable, ruleSet: RuleSet, date = new Date()): CheckResult {
+/** Pass the day from useDiet().today so verdicts follow the calendar. */
+export function checkItem(item: Checkable, ruleSet: RuleSet, date: Date): CheckResult {
   return engine.check(item, ruleSet, { date });
 }
 
@@ -41,7 +42,7 @@ export function findDiet(id: string | null | undefined): DietInfo | undefined {
  * A plain-language note about the calendar, for diets whose rules depend on
  * the date. Returns undefined for diets without a calendar.
  */
-export function calendarNote(ruleSet: RuleSet, date = new Date()): string | undefined {
+export function calendarNote(ruleSet: RuleSet, date: Date): string | undefined {
   if (ruleSet.calendar !== 'western-lent') return undefined;
   const days = westernLent(date);
   if (days.includes('good-friday')) return 'Today is Good Friday, a day of abstinence from meat.';

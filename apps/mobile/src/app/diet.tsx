@@ -12,7 +12,7 @@ import { useDiet } from '@/state/diet';
 /** Pick which fast every check and scan is judged against. */
 export default function DietScreen() {
   const theme = useTheme();
-  const { diet: active, setDiet } = useDiet();
+  const { diet: active, setDiet, today } = useDiet();
 
   return (
     <Screen title="Your fast">
@@ -23,7 +23,7 @@ export default function DietScreen() {
       <View style={styles.list} accessibilityRole="radiogroup">
         {DIETS.map(({ ruleSet, tagline }) => {
           const selected = ruleSet.id === active.ruleSet.id;
-          const note = calendarNote(ruleSet);
+          const note = calendarNote(ruleSet, today);
           return (
             <Pressable
               key={ruleSet.id}

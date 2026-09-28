@@ -9,8 +9,8 @@ import { useDiet } from '@/state/diet';
 
 /** The active diet, shown above every check. Tapping it opens the diet picker. */
 export function DietChip() {
-  const { diet } = useDiet();
-  const note = calendarNote(diet.ruleSet);
+  const { diet, today } = useDiet();
+  const note = calendarNote(diet.ruleSet, today);
   return (
     <Link href="/diet" asChild>
       <Pressable accessibilityRole="button" accessibilityHint="Opens the diet picker">

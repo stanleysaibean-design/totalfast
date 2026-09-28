@@ -3,8 +3,9 @@
 Food-compliance engine and mobile app: "can I eat this?" across food-restriction fasts.
 
 ## Stack
-- App: React Native + Expo + TypeScript (iOS and Android from one codebase). Not scaffolded yet; waiting on where the code will live.
+- App: `apps/mobile`, React Native + Expo SDK 57 + TypeScript (iOS and Android from one codebase). See its README.
 - Engine: `packages/engine`, plain TypeScript with no runtime dependencies, so the app and the rules backend share it.
+- npm workspaces tie them together: run `npm install` once at the repo root.
 
 ## packages/engine
 - `src/types.ts`: verdicts (compliant, not_compliant, uncertain), ingredient and rule-set schema.
@@ -19,11 +20,8 @@ Food-compliance engine and mobile app: "can I eat this?" across food-restriction
 Rule precedence: rules naming an ingredient beat category rules; at the same level an `allow` is an exception and wins; otherwise deny beats caution. A new diet is a new rule set file, not engine code.
 
 ```
-cd packages/engine
-npm install
+npm install                     # at the repo root
 npm test
-npm run check -- whole30 "Water, cane sugar, ghee (milk)"
-npm run check -- lent-catholic "Chicken broth, carrots" 2027-02-19
+npm run check --workspace @total-fast/engine -- whole30 "Water, cane sugar, ghee (milk)"
+npm run check --workspace @total-fast/engine -- lent-catholic "Chicken broth, carrots" 2027-02-19
 ```
-
-Note: the shared project folder does not support symlinks, so run `npm install` in a copy (or the real repo), not in /mnt/project-files.

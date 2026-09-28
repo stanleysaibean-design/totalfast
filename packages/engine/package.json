@@ -1,0 +1,17 @@
+{
+  "name": "@total-fast/engine",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Total Fast compliance engine: canonical ingredients + declarative diet rule sets -> verdicts.",
+  "type": "module",
+  "main": "src/index.ts",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "node --experimental-strip-types --no-warnings --test test/*.test.ts",
+    "check": "node --experimental-strip-types --no-warnings src/cli.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.4",
+    "typescript": "^5.9.3"
+  }
+}

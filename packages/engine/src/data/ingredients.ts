@@ -1,0 +1,201 @@
+import type { Category, Ingredient } from '../types.ts';
+
+/**
+ * Seed canonical ingredient database. This is a starting set for engine
+ * development, not the production database: production data comes from
+ * Open Food Facts plus a human review layer. Unknown label text resolves to
+ * `uncertain`, never to a guess.
+ */
+const i = (id: string, categories: Category[], aliases: string[] = [], extra: Partial<Ingredient> = {}): Ingredient => ({
+  id,
+  name: id.replace(/-/g, ' '),
+  aliases,
+  categories,
+  ...extra,
+});
+
+export const INGREDIENTS: Ingredient[] = [
+  // water, salt, basics
+  i('water', ['water'], ['filtered water', 'purified water', 'carbonated water', 'sparkling water']),
+  i('salt', ['salt'], ['sea salt', 'kosher salt', 'iodized salt', 'himalayan pink salt', 'pink salt']),
+  i('vinegar', ['vinegar'], ['distilled vinegar', 'white vinegar', 'distilled white vinegar']),
+  i('apple-cider-vinegar', ['vinegar'], ['cider vinegar']),
+  i('baking-soda', ['chemical-leavening'], ['sodium bicarbonate', 'bicarbonate of soda']),
+  i('baking-powder', ['chemical-leavening'], ['sodium aluminum phosphate', 'sodium acid pyrophosphate']),
+  i('yeast', ['yeast'], ['active dry yeast', 'instant yeast', "baker's yeast", 'bakers yeast']),
+  i('nutritional-yeast', ['yeast', 'vitamin-mineral'], ['nutritional yeast flakes', 'deactivated yeast']),
+  i('yeast-extract', ['yeast'], ['autolyzed yeast extract', 'autolyzed yeast']),
+
+  // vegetables
+  i('tomato', ['vegetable', 'fruit'], ['tomatoes', 'tomato paste', 'tomato puree', 'diced tomatoes', 'crushed tomatoes']),
+  i('onion', ['vegetable', 'root-vegetable'], ['onions', 'dehydrated onion', 'onion powder', 'dried onion']),
+  i('garlic', ['vegetable', 'root-vegetable'], ['garlic powder', 'dehydrated garlic', 'minced garlic']),
+  i('carrot', ['vegetable', 'root-vegetable'], ['carrots']),
+  i('potato', ['vegetable', 'root-vegetable'], ['potatoes', 'potato flakes', 'dehydrated potatoes']),
+  i('sweet-potato', ['vegetable', 'root-vegetable'], ['sweet potatoes', 'yams']),
+  i('beet', ['vegetable', 'root-vegetable'], ['beets', 'beetroot']),
+  i('ginger', ['root-vegetable', 'herb-spice'], ['ground ginger', 'ginger root']),
+  i('celery', ['vegetable'], ['celery seed']),
+  i('bell-pepper', ['vegetable'], ['bell peppers', 'red bell pepper', 'green bell pepper', 'red peppers', 'green peppers']),
+  i('spinach', ['vegetable', 'leafy-green']),
+  i('kale', ['vegetable', 'leafy-green']),
+  i('broccoli', ['vegetable']),
+  i('zucchini', ['vegetable']),
+  i('cucumber', ['vegetable'], ['cucumbers']),
+  i('mushroom', ['mushroom', 'vegetable'], ['mushrooms']),
+  i('corn', ['grain', 'whole-grain', 'vegetable'], ['sweet corn', 'whole kernel corn']),
+
+  // fruit
+  i('apple', ['fruit'], ['apples', 'dried apples']),
+  i('banana', ['fruit'], ['bananas']),
+  i('date', ['fruit'], ['dates', 'medjool dates']),
+  i('raisin', ['fruit'], ['raisins']),
+  i('lemon-juice', ['fruit'], ['lemon juice concentrate', 'lime juice']),
+  i('coconut', ['fruit'], ['shredded coconut', 'unsweetened coconut', 'coconut flakes']),
+  i('coconut-milk', ['fruit'], ['coconut cream']),
+  i('apple-juice-concentrate', ['fruit', 'fruit-juice'], ['apple juice', 'fruit juice concentrate']),
+
+  // legumes
+  i('chickpea', ['legume'], ['chickpeas', 'garbanzo beans', 'garbanzos']),
+  i('black-bean', ['legume'], ['black beans']),
+  i('lentil', ['legume'], ['lentils', 'red lentils']),
+  i('kidney-bean', ['legume'], ['kidney beans']),
+  i('green-bean', ['legume', 'green-legume', 'vegetable'], ['green beans', 'string beans']),
+  i('pea', ['legume', 'green-legume', 'vegetable'], ['peas', 'green peas', 'snow peas', 'sugar snap peas', 'pea protein']),
+  i('soybean', ['legume', 'soy'], ['soybeans', 'soy', 'edamame', 'soy flour', 'soy protein isolate']),
+  i('tofu', ['legume', 'soy']),
+  i('soy-sauce', ['legume', 'soy', 'gluten'], ['shoyu']),
+  i('soy-lecithin', ['soy', 'emulsifier'], ['soya lecithin', 'lecithin (soy)']),
+  i('peanut', ['legume', 'peanut'], ['peanuts', 'peanut butter', 'roasted peanuts']),
+
+  // grains
+  i('wheat-flour', ['grain', 'refined-grain', 'gluten'], ['flour', 'enriched flour', 'enriched wheat flour', 'unbleached enriched flour', 'bleached wheat flour', 'all purpose flour', 'wheat']),
+  i('whole-wheat-flour', ['grain', 'whole-grain', 'gluten'], ['whole wheat', 'whole grain wheat flour', 'stone ground whole wheat flour', 'whole wheat flour']),
+  i('oats', ['grain', 'whole-grain'], ['rolled oats', 'whole grain oats', 'oat flour', 'whole rolled oats', 'steel cut oats']),
+  i('brown-rice', ['grain', 'whole-grain'], ['whole grain brown rice', 'brown rice flour']),
+  i('white-rice', ['grain', 'refined-grain'], ['rice', 'enriched rice', 'rice flour', 'white rice flour']),
+  i('quinoa', ['pseudo-grain', 'whole-grain']),
+  i('barley', ['grain', 'whole-grain', 'gluten'], ['barley malt', 'malted barley']),
+  i('cornstarch', ['grain', 'refined-grain', 'thickener'], ['corn starch']),
+  i('corn-flour', ['grain', 'whole-grain'], ['masa harina', 'whole grain corn', 'ground corn', 'cornmeal', 'whole grain corn flour']),
+
+  // nuts and seeds
+  i('almond', ['nut'], ['almonds', 'almond flour', 'almond butter', 'blanched almonds']),
+  i('cashew', ['nut'], ['cashews']),
+  i('almond-milk', ['nut'], ['unsweetened almond milk', 'almondmilk']),
+  i('oat-milk', ['grain', 'whole-grain'], ['oatmilk']),
+  i('walnut', ['nut'], ['walnuts']),
+  i('pecan', ['nut'], ['pecans']),
+  i('sunflower-seed', ['seed'], ['sunflower seeds']),
+  i('pumpkin-seed', ['seed'], ['pumpkin seeds', 'pepitas']),
+  i('chia-seed', ['seed'], ['chia seeds', 'chia']),
+  i('flaxseed', ['seed'], ['flax seed', 'ground flaxseed', 'flax']),
+  i('sesame-seed', ['seed'], ['sesame seeds', 'sesame', 'tahini']),
+
+  // herbs and spices
+  i('black-pepper', ['herb-spice'], ['pepper', 'ground black pepper']),
+  i('cinnamon', ['herb-spice']),
+  i('cumin', ['herb-spice']),
+  i('paprika', ['herb-spice']),
+  i('turmeric', ['herb-spice']),
+  i('oregano', ['herb-spice']),
+  i('basil', ['herb-spice']),
+  i('spices', ['herb-spice'], ['spice', 'herbs', 'herbs and spices']),
+  i('vanilla-extract', ['herb-spice', 'alcohol'], ['pure vanilla extract', 'vanilla']),
+  i('cocoa', ['herb-spice'], ['cocoa powder', 'unsweetened cocoa', 'cacao']),
+
+  // oils and fats
+  i('olive-oil', ['plant-oil'], ['extra virgin olive oil']),
+  i('avocado-oil', ['plant-oil']),
+  i('coconut-oil', ['plant-oil'], ['virgin coconut oil']),
+  i('canola-oil', ['plant-oil'], ['rapeseed oil', 'expeller pressed canola oil']),
+  i('sunflower-oil', ['plant-oil'], ['high oleic sunflower oil', 'safflower oil', 'high oleic safflower oil']),
+  i('soybean-oil', ['plant-oil', 'soy'], ['soy oil']),
+  i('vegetable-oil', ['plant-oil'], ['vegetable oils']),
+  i('palm-oil', ['plant-oil', 'solid-fat'], ['palm kernel oil', 'palm fruit oil']),
+  i('shortening', ['solid-fat'], ['vegetable shortening']),
+  i('margarine', ['solid-fat']),
+  i('hydrogenated-oil', ['solid-fat', 'hydrogenated-fat'], ['partially hydrogenated soybean oil', 'partially hydrogenated oil', 'hydrogenated vegetable oil']),
+  i('lard', ['animal-fat', 'solid-fat', 'meat-derived']),
+  i('ghee', ['clarified-butter', 'dairy'], ['clarified butter']),
+
+  // dairy and eggs
+  i('milk', ['dairy'], ['whole milk', 'skim milk', 'nonfat milk', 'milk powder', 'nonfat dry milk', 'dry milk']),
+  i('butter', ['dairy', 'solid-fat'], ['sweet cream butter', 'unsalted butter']),
+  i('cream', ['dairy'], ['heavy cream', 'sour cream']),
+  i('cheese', ['dairy'], ['cheddar cheese', 'parmesan cheese', 'mozzarella cheese', 'cheese cultures']),
+  i('whey', ['dairy'], ['whey protein', 'whey protein concentrate', 'sweet whey']),
+  i('casein', ['dairy'], ['sodium caseinate', 'calcium caseinate']),
+  i('yogurt', ['dairy'], ['yoghurt', 'greek yogurt']),
+  i('egg', ['egg'], ['eggs', 'whole eggs', 'egg whites', 'egg yolks', 'dried egg']),
+
+  // meat and fish
+  i('beef', ['meat', 'red-meat'], ['ground beef']),
+  i('beef-broth', ['meat-derived'], ['beef stock', 'beef base', 'beef flavor']),
+  i('pork', ['meat', 'red-meat'], ['bacon', 'ham']),
+  i('chicken', ['meat', 'poultry'], ['chicken breast', 'cooked chicken', 'chicken meat']),
+  i('chicken-broth', ['meat-derived'], ['chicken stock', 'chicken base', 'chicken flavor']),
+  i('chicken-fat', ['meat-derived', 'animal-fat']),
+  i('turkey', ['meat', 'poultry']),
+  i('gelatin', ['gelatin', 'meat-derived'], ['gelatine']),
+  i('salmon', ['fish']),
+  i('tuna', ['fish']),
+  i('anchovy', ['fish'], ['anchovies']),
+  i('fish-sauce', ['fish'], []),
+  i('shrimp', ['shellfish'], ['prawns']),
+
+  // sweeteners
+  i('sugar', ['added-sugar'], ['cane sugar', 'organic cane sugar', 'brown sugar', 'powdered sugar', 'evaporated cane juice', 'raw sugar', 'turbinado sugar', 'coconut sugar', 'dextrose', 'sucrose', 'invert sugar', 'fructose']),
+  i('corn-syrup', ['added-sugar'], ['high fructose corn syrup', 'glucose syrup', 'corn syrup solids', 'glucose']),
+  i('maple-syrup', ['added-sugar'], ['pure maple syrup']),
+  i('honey', ['added-sugar', 'honey']),
+  i('molasses', ['added-sugar'], ['cane molasses']),
+  i('agave', ['added-sugar'], ['agave nectar', 'agave syrup']),
+  i('brown-rice-syrup', ['added-sugar'], ['rice syrup']),
+  i('stevia', ['added-sugar'], ['stevia leaf extract', 'rebaudioside a', 'reb a']),
+  i('monk-fruit', ['added-sugar'], ['monk fruit extract', 'luo han guo']),
+  i('sucralose', ['artificial-sweetener', 'added-sugar']),
+  i('aspartame', ['artificial-sweetener', 'added-sugar']),
+  i('erythritol', ['sugar-alcohol', 'added-sugar']),
+  i('maltodextrin', ['added-sugar', 'refined-grain']),
+
+  // beverages
+  i('coffee', ['caffeine'], ['brewed coffee', 'instant coffee']),
+  i('tea', ['caffeine'], ['black tea', 'green tea']),
+  i('wine', ['alcohol'], ['red wine', 'white wine', 'cooking wine']),
+  i('beer', ['alcohol', 'gluten']),
+
+  // additives
+  i('citric-acid', ['preservative']),
+  i('ascorbic-acid', ['vitamin-mineral', 'preservative'], ['vitamin c']),
+  i('sodium-benzoate', ['preservative']),
+  i('potassium-sorbate', ['preservative']),
+  i('calcium-propionate', ['preservative']),
+  i('bht', ['preservative']),
+  i('sulfites', ['preservative'], ['sodium bisulfite', 'sodium metabisulfite', 'sulfur dioxide', 'potassium metabisulfite']),
+  i('msg', ['artificial-flavor'], ['monosodium glutamate']),
+  i('red-40', ['artificial-color'], ['red 40', 'fd&c red no. 40', 'red 40 lake', 'allura red']),
+  i('yellow-5', ['artificial-color'], ['yellow 5', 'fd&c yellow no. 5', 'tartrazine']),
+  i('caramel-color', ['artificial-color']),
+  i('artificial-flavor', ['artificial-flavor'], ['artificial flavors', 'artificial flavoring']),
+  i('natural-flavors', ['natural-flavor'], ['natural flavor', 'natural flavoring', 'natural flavour'], {
+    ambiguous: '"Natural flavors" can hide animal-derived or alcohol-based carriers; the label does not say which.',
+  }),
+  i('xanthan-gum', ['thickener']),
+  i('guar-gum', ['thickener']),
+  i('gellan-gum', ['thickener']),
+  i('carrageenan', ['thickener']),
+  i('pectin', ['thickener', 'fruit'], ['fruit pectin']),
+  i('arrowroot', ['thickener', 'root-vegetable'], ['arrowroot powder', 'arrowroot starch']),
+  i('tapioca', ['thickener', 'root-vegetable'], ['tapioca starch', 'tapioca flour', 'cassava']),
+  i('mono-and-diglycerides', ['emulsifier'], ['monoglycerides', 'diglycerides']),
+  i('sunflower-lecithin', ['emulsifier'], []),
+  i('niacin', ['vitamin-mineral']),
+  i('reduced-iron', ['vitamin-mineral'], ['iron', 'ferrous sulfate']),
+  i('thiamine-mononitrate', ['vitamin-mineral'], ['thiamin mononitrate', 'thiamine', 'vitamin b1']),
+  i('riboflavin', ['vitamin-mineral'], ['vitamin b2']),
+  i('folic-acid', ['vitamin-mineral'], ['folate']),
+  i('calcium-carbonate', ['vitamin-mineral']),
+  i('vitamin-d', ['vitamin-mineral'], ['vitamin d2', 'vitamin d3']),
+  i('vitamin-e', ['vitamin-mineral', 'preservative'], ['mixed tocopherols', 'tocopherols']),
+];

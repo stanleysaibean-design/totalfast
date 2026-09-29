@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import {
-  ComplianceEngine, INGREDIENTS, fromOpenFoodFacts, danielFast, lent, parseIngredients, recipeLineToIngredient, westernEaster, westernLent, whole30,
+  ComplianceEngine, INGREDIENTS, fromOpenFoodFacts, parseLabel, danielFast, lent, parseIngredients, recipeLineToIngredient, westernEaster, westernLent, whole30,
 } from '../src/index.ts';
 
 const engine = new ComplianceEngine(INGREDIENTS);
@@ -26,6 +26,22 @@ describe('parseIngredients', () => {
     assert.ok(parsed.includes('calcium propionate'), 'functional note stripped');
     assert.ok(!parsed.some((n) => /contains/i.test(n)), 'allergen statement removed');
     assert.ok(!parsed.some((n) => /preserve/i.test(n)), 'parenthesized functional note dropped');
+  });
+
+  it('keeps parsing after a stray closing bracket', () => {
+    const names = parseIngredients('Oats, almonds), honey').map((i) => i.name);
+    assert.deepEqual(names, ['Oats', 'almonds', 'honey']);
+    assert.equal(check('Oats, almonds), honey', danielFast).verdict, 'not_compliant');
+  });
+
+  it('strips Open Food Facts percentages', () => {
+    const r = check('Cane sugar 40%, milk powder 8.7%, cocoa (12%)', danielFast);
+    assert.deepEqual(r.findings.map((f) => f.ingredient?.id), ['sugar', 'milk', 'cocoa']);
+  });
+
+  it('reads the declared allergens and ignores "may contain"', () => {
+    assert.deepEqual(parseLabel('Oats, salt. Contains: milk, wheat and soy. May contain peanuts.').declared, ['milk', 'wheat', 'soy']);
+    assert.deepEqual(parseLabel('Water, contains 2% or less of: salt').declared, []);
   });
 
   it('splits and/or alternatives', () => {
@@ -54,6 +70,24 @@ describe('Whole30', () => {
     const r = check('Apples, natural flavors, zorbitol gum');
     assert.equal(r.verdict, 'uncertain');
     assert.deepEqual(r.triggers.map((t) => t.label), ['natural flavors', 'zorbitol gum']);
+  });
+});
+
+describe('declared allergens', () => {
+  it('flags a declared allergen that no listed ingredient explains', () => {
+    const r = check('Apples, cinnamon, spices. Contains: milk.', danielFast);
+    assert.equal(r.verdict, 'uncertain');
+    assert.equal(r.triggers[0].ingredient?.id, 'milk');
+    assert.match(r.triggers[0].reason, /no ingredient in the list accounts for it/);
+  });
+  it('accepts a declared allergen that a listed ingredient explains', () => {
+    assert.equal(check('Apples, ghee. Contains: milk.').verdict, 'compliant');
+    assert.equal(check('Almonds, salt. Contains: tree nuts (almonds).', danielFast).verdict, 'compliant');
+  });
+  it('does not treat a broad match as an explanation', () => {
+    const r = check('Oats, salt. Contains: wheat.', lent, '2027-02-19');
+    assert.equal(r.verdict, 'compliant', 'wheat is fine on a Lenten Friday');
+    assert.equal(check('Oats, salt. Contains: wheat.', danielFast).verdict, 'uncertain');
   });
 });
 

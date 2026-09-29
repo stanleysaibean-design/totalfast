@@ -1,7 +1,7 @@
 import { CALENDARS } from './calendar.ts';
-import { parseIngredients, type ParsedIngredient } from './parse.ts';
+import { parseLabel, type ParsedIngredient } from './parse.ts';
 import { IngredientIndex, recipeLineToIngredient } from './resolve.ts';
-import type { Checkable, CheckResult, Effect, Ingredient, IngredientFinding, Rule, RuleSet, Verdict } from './types.ts';
+import type { Category, Checkable, CheckResult, Effect, Ingredient, IngredientFinding, Rule, RuleSet, Verdict } from './types.ts';
 
 export interface CheckOptions {
   /** Date the food will be eaten; drives calendar rules. Defaults to now. */
@@ -12,6 +12,15 @@ export interface CheckOptions {
 const ALLERGEN_SOURCES = new Set([
   'milk', 'soy', 'soya', 'wheat', 'egg', 'eggs', 'fish', 'shellfish', 'peanut', 'peanuts', 'sesame',
   'tree nuts', 'almond', 'almonds', 'cashew', 'coconut', 'crustacean', 'barley', 'rye', 'oats',
+]);
+
+/**
+ * Categories too broad to show that a declared allergen is accounted for:
+ * oats are a grain, but they don't explain "Contains: wheat".
+ */
+const BROAD_CATEGORIES = new Set<Category>([
+  'grain', 'whole-grain', 'refined-grain', 'pseudo-grain', 'vegetable', 'fruit', 'legume', 'seed',
+  'plant-oil', 'thickener', 'emulsifier', 'vitamin-mineral',
 ]);
 
 const STRENGTH: Record<Effect, number> = { allow: 0, caution: 1, deny: 2 };
@@ -38,9 +47,9 @@ export class ComplianceEngine {
 
   check(item: Checkable, ruleSet: RuleSet, opts: CheckOptions = {}): CheckResult {
     const active = activeRules(ruleSet, opts.date ?? new Date());
-    const parsed = item.ingredients
-      ? item.ingredients.map((l): ParsedIngredient => ({ name: recipeLineToIngredient(l), children: [] }))
-      : parseIngredients(item.ingredientsText ?? '');
+    const label = item.ingredients
+      ? { ingredients: item.ingredients.map((l): ParsedIngredient => ({ name: recipeLineToIngredient(l), children: [] })), declared: [] }
+      : parseLabel(item.ingredientsText ?? '');
 
     const findings: IngredientFinding[] = [];
     const visit = (items: ParsedIngredient[]) => {
@@ -61,7 +70,8 @@ export class ComplianceEngine {
         visit(p.children);
       }
     };
-    visit(parsed);
+    visit(label.ingredients);
+    findings.push(...this.unaccountedAllergens(label.declared, findings, active));
 
     const ruleSetRef = { id: ruleSet.id, version: ruleSet.version };
     if (findings.length === 0) {
@@ -94,6 +104,32 @@ export class ComplianceEngine {
       findings,
       ruleSet: ruleSetRef,
     };
+  }
+
+  /**
+   * A "Contains: milk" statement is the manufacturer saying milk is in the
+   * product. If the active rules would object to it and no listed ingredient
+   * explains it, the list is incomplete or unrecognized, so flag it rather
+   * than let the product pass as compliant.
+   */
+  private unaccountedAllergens(declared: string[], findings: IngredientFinding[], rules: Rule[]): IngredientFinding[] {
+    const out: IngredientFinding[] = [];
+    for (const word of declared) {
+      const allergen = this.index.resolve(word);
+      if (!allergen || this.judge(word, allergen, rules).verdict === 'compliant') continue;
+      const specific = allergen.categories.filter((c) => !BROAD_CATEGORIES.has(c));
+      const accounted = [...findings, ...out].some(
+        (f) => f.ingredient && (f.ingredient.id === allergen.id || f.ingredient.categories.some((c) => specific.includes(c))),
+      );
+      if (accounted) continue;
+      out.push({
+        label: `${word} (label says "Contains")`,
+        ingredient: allergen,
+        verdict: 'uncertain',
+        reason: `The label declares ${word}, but no ingredient in the list accounts for it.`,
+      });
+    }
+    return out;
   }
 
   private judge(label: string, ingredient: Ingredient | undefined, rules: Rule[]): IngredientFinding {

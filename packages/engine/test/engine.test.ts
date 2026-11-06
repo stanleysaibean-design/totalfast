@@ -1,12 +1,16 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import {
-  ComplianceEngine, INGREDIENTS, fromOpenFoodFacts, parseLabel, danielFast, lent, parseIngredients, recipeLineToIngredient, westernEaster, westernLent, whole30,
+  ComplianceEngine, INGREDIENTS, fastingSeasons, fromOpenFoodFacts, parseLabel, danielFast, lent, orthodox, orthodoxDay, orthodoxPascha, parseIngredients,
+  recipeLineToIngredient, westernEaster, westernLent, whole30, type RuleSet,
 } from '../src/index.ts';
 
 const engine = new ComplianceEngine(INGREDIENTS);
-const check = (text: string, rs = whole30, date?: string) =>
-  engine.check({ name: 't', ingredientsText: text }, rs, { date: date ? new Date(`${date}T12:00:00`) : undefined });
+const check = (text: string, rs: RuleSet = whole30, date?: string, calendar?: string) =>
+  engine.check({ name: 't', ingredientsText: text }, rs, { date: date ? new Date(`${date}T12:00:00`) : undefined, calendar });
+const day = (s: string) => new Date(`${s}T12:00:00`);
+const iso = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+const OLD = 'orthodox-julian';
 
 // Label text modeled on common US products.
 const SANDWICH_BREAD =
@@ -124,6 +128,112 @@ describe('Lent', () => {
     assert.equal(check(TUNA, lent, '2027-02-19').verdict, 'compliant');
     const broth = check('Chicken broth, carrots, salt', lent, '2027-02-19');
     assert.equal(broth.verdict, 'uncertain');
+  });
+});
+
+describe('Orthodox calendar', () => {
+  it('computes Orthodox Pascha', () => {
+    assert.deepEqual(
+      [2025, 2026, 2027, 2028].map((y) => orthodoxPascha(y).toISOString().slice(0, 10)),
+      ['2025-04-20', '2026-04-12', '2027-05-02', '2028-04-16'],
+    );
+  });
+  it('starts Great Lent on Clean Monday, March 15, 2027, on both calendars', () => {
+    for (const style of ['revised-julian', 'julian'] as const) {
+      const r = orthodoxDay(day('2027-03-15'), style);
+      assert.equal(r.level, 'strict');
+      assert.equal(r.season, 'great-lent');
+      assert.equal(orthodoxDay(day('2027-03-14'), style).level, 'dairy', 'Forgiveness Sunday ends Cheesefare week');
+    }
+  });
+  it('relaxes weekends and feasts in Great Lent', () => {
+    assert.equal(orthodoxDay(day('2027-03-20'), 'revised-julian').level, 'wine-oil', 'Saturday');
+    assert.equal(orthodoxDay(day('2027-03-25'), 'revised-julian').level, 'fish', 'Annunciation, New Calendar');
+    assert.equal(orthodoxDay(day('2027-03-25'), 'julian').level, 'strict', 'Old Calendar keeps the Annunciation on April 7');
+    assert.equal(orthodoxDay(day('2027-04-07'), 'julian').level, 'fish');
+    assert.equal(orthodoxDay(day('2027-04-25'), 'revised-julian').level, 'fish', 'Palm Sunday');
+    assert.equal(orthodoxDay(day('2027-04-29'), 'revised-julian').level, 'wine-oil', 'Holy Thursday');
+  });
+  it('keeps fast-free weeks free, even on Wednesdays and Fridays', () => {
+    assert.equal(orthodoxDay(day('2027-05-07'), 'revised-julian').level, 'none', 'Friday of Bright Week');
+    assert.equal(orthodoxDay(day('2027-01-01'), 'revised-julian').level, 'none', 'Christmastide');
+    assert.equal(orthodoxDay(day('2027-02-24'), 'revised-julian').level, 'none', 'Wednesday after the Publican and Pharisee');
+  });
+  it('keeps the Nativity Fast 13 days later on the Old Calendar', () => {
+    assert.equal(orthodoxDay(day('2026-11-15'), 'revised-julian').season, 'nativity-fast');
+    assert.equal(orthodoxDay(day('2026-11-15'), 'julian').season, undefined);
+    assert.equal(orthodoxDay(day('2026-12-25'), 'revised-julian').level, 'none');
+    assert.equal(orthodoxDay(day('2026-12-25'), 'julian').season, 'nativity-fast');
+    assert.equal(orthodoxDay(day('2027-01-07'), 'julian').level, 'none', 'Old Calendar Christmas');
+  });
+  it('fasts on ordinary Wednesdays and Fridays only', () => {
+    assert.equal(orthodoxDay(day('2026-11-06'), 'revised-julian').level, 'strict');
+    assert.equal(orthodoxDay(day('2026-11-05'), 'revised-julian').level, 'none');
+    assert.equal(orthodoxDay(day('2027-09-08'), 'revised-julian').level, 'fish', 'Nativity of the Theotokos on a Wednesday');
+  });
+  it('lists the coming fasting seasons', () => {
+    const list = (cal: string) => fastingSeasons(cal, day('2026-11-06')).map((s) => `${s.id} ${iso(s.start)} ${iso(s.end)}`);
+    assert.deepEqual(list('orthodox-revised-julian'), [
+      'nativity-fast 2026-11-15 2026-12-24',
+      'great-lent 2027-03-15 2027-05-01',
+      'apostles-fast 2027-06-28 2027-06-28',
+      'dormition-fast 2027-08-01 2027-08-14',
+    ]);
+    assert.deepEqual(list(OLD).slice(0, 2), ['nativity-fast 2026-11-28 2027-01-06', 'great-lent 2027-03-15 2027-05-01']);
+    assert.deepEqual(list('western-lent'), ['lent 2027-02-10 2027-03-27']);
+    assert.equal(fastingSeasons('orthodox-revised-julian', day('2026-12-01'))[0].start.getDate(), 15, 'a season in progress keeps its real start');
+  });
+});
+
+describe('Orthodox fasting', () => {
+  const VEG_SOUP = 'Water, lentils, carrots, onions, olive oil, salt.';
+  const CHEESE_PIE = 'Wheat flour, cheese, eggs, butter, salt.';
+  it('denies meat, dairy, eggs, fish, wine and olive oil on a strict day, naming each', () => {
+    const r = check('Tuna, olive oil, white wine, cheese, egg', orthodox, '2027-03-17');
+    assert.equal(r.verdict, 'not_compliant');
+    assert.deepEqual(r.triggers.map((t) => t.ingredient?.id), ['tuna', 'olive-oil', 'wine', 'cheese', 'egg']);
+    assert.match(r.summary, /Not compliant with Orthodox fasting/);
+  });
+  it('allows olive oil on weekends of Great Lent but still no dairy', () => {
+    assert.equal(check(VEG_SOUP, orthodox, '2027-03-20').verdict, 'compliant');
+    assert.equal(check(VEG_SOUP, orthodox, '2027-03-17').verdict, 'not_compliant');
+    assert.equal(check(CHEESE_PIE, orthodox, '2027-03-20').verdict, 'not_compliant');
+  });
+  it('is cautious about other cooking oils on a strict day', () => {
+    const r = check('Potatoes, sunflower oil, salt', orthodox, '2027-03-17');
+    assert.equal(r.verdict, 'uncertain');
+    assert.equal(r.triggers[0].ingredient?.id, 'sunflower-oil');
+  });
+  it('allows shellfish and honey on every fast day', () => {
+    assert.equal(check('Shrimp, squid, garlic, salt', orthodox, '2027-03-17').verdict, 'compliant');
+    assert.equal(check('Honey, walnuts, sesame seeds', orthodox, '2027-03-17').verdict, 'compliant');
+  });
+  it('allows fish on Palm Sunday and fish roe on Lazarus Saturday', () => {
+    assert.equal(check('Salmon, lemon juice, salt', orthodox, '2027-04-25').verdict, 'compliant');
+    assert.equal(check('Fish roe, bread crumbs', orthodox, '2027-04-24').verdict, 'uncertain', 'roe passes; bread crumbs are unknown');
+    assert.equal(check('Fish roe, onions', orthodox, '2027-04-24').verdict, 'compliant');
+    assert.equal(check('Salmon', orthodox, '2027-04-24').verdict, 'not_compliant');
+  });
+  it('allows wine but not oil on Holy Saturday', () => {
+    assert.equal(check('Red wine', orthodox, '2027-05-01').verdict, 'compliant');
+    assert.equal(check('Olive oil', orthodox, '2027-05-01').verdict, 'not_compliant');
+  });
+  it('allows dairy but not meat in Cheesefare week', () => {
+    assert.equal(check(CHEESE_PIE, orthodox, '2027-03-10').verdict, 'compliant');
+    assert.equal(check(CHICKEN_SOUP, orthodox, '2027-03-10').verdict, 'not_compliant');
+  });
+  it('has no restrictions on a fast-free day', () => {
+    const r = check(CHICKEN_SOUP, orthodox, '2027-05-05');
+    assert.equal(r.verdict, 'compliant');
+    assert.match(r.summary, /No Orthodox fasting restrictions apply/);
+  });
+  it('follows the chosen church calendar', () => {
+    // December 25, 2026 is Christmas on the New Calendar and a Nativity Fast day on the Old.
+    assert.equal(check(CHEESE_PIE, orthodox, '2026-12-25').verdict, 'compliant');
+    assert.equal(check(CHEESE_PIE, orthodox, '2026-12-25', OLD).verdict, 'not_compliant');
+  });
+  it('rejects a calendar the rule set does not offer', () => {
+    assert.throws(() => check(CHEESE_PIE, orthodox, '2026-12-25', 'western-lent'), /does not offer/);
   });
 });
 

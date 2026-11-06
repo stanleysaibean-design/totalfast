@@ -6,6 +6,11 @@ import type { Category, Checkable, CheckResult, Effect, Ingredient, IngredientFi
 export interface CheckOptions {
   /** Date the food will be eaten; drives calendar rules. Defaults to now. */
   date?: Date;
+  /**
+   * Calendar to use, for rule sets that offer `calendarChoices`. Defaults to
+   * the rule set's own `calendar`.
+   */
+  calendar?: string;
 }
 
 /** Allergen words printed in parentheses after an ingredient, per FALCPA/EU labeling. */
@@ -46,7 +51,7 @@ export class ComplianceEngine {
   }
 
   check(item: Checkable, ruleSet: RuleSet, opts: CheckOptions = {}): CheckResult {
-    const active = activeRules(ruleSet, opts.date ?? new Date());
+    const active = activeRules(ruleSet, opts.date ?? new Date(), opts.calendar);
     const label = item.ingredients
       ? { ingredients: item.ingredients.map((l): ParsedIngredient => ({ name: recipeLineToIngredient(l), children: [] })), declared: [] }
       : parseLabel(item.ingredientsText ?? '');
@@ -152,9 +157,12 @@ function pick(rules: Rule[]): Rule | undefined {
   return rules.reduce((a, b) => (STRENGTH[b.effect] > STRENGTH[a.effect] ? b : a));
 }
 
-function activeRules(ruleSet: RuleSet, date: Date): Rule[] {
-  const calendar = ruleSet.calendar ? CALENDARS[ruleSet.calendar] : undefined;
-  if (ruleSet.calendar && !calendar) throw new Error(`Unknown calendar "${ruleSet.calendar}" in ${ruleSet.id}`);
+function activeRules(ruleSet: RuleSet, date: Date, choice?: string): Rule[] {
+  const offered = [ruleSet.calendar, ...(ruleSet.calendarChoices ?? []).map((c) => c.calendar)];
+  if (choice && !offered.includes(choice)) throw new Error(`${ruleSet.id} does not offer the calendar "${choice}"`);
+  const id = choice ?? ruleSet.calendar;
+  const calendar = id ? CALENDARS[id] : undefined;
+  if (id && !calendar) throw new Error(`Unknown calendar "${id}" in ${ruleSet.id}`);
   const days = new Set(calendar ? calendar(date) : []);
   return ruleSet.rules.filter((r) => !r.when || r.when.days.some((d) => days.has(d)));
 }

@@ -6,13 +6,15 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-import { calendarNote, DIETS } from '@/lib/engine';
+import { calendarChoices, calendarNote, DIETS } from '@/lib/engine';
 import { useDiet } from '@/state/diet';
 
 /** Pick which fast every check and scan is judged against. */
 export default function DietScreen() {
   const theme = useTheme();
-  const { diet: active, setDiet, today } = useDiet();
+  const { diet: active, setDiet, calendarFor, setCalendar, today } = useDiet();
+  const choices = calendarChoices(active.ruleSet);
+  const activeCalendar = calendarFor(active.ruleSet.id);
 
   return (
     <Screen title="Your fast">
@@ -23,7 +25,7 @@ export default function DietScreen() {
       <View style={styles.list} accessibilityRole="radiogroup">
         {DIETS.map(({ ruleSet, tagline }) => {
           const selected = ruleSet.id === active.ruleSet.id;
-          const note = calendarNote(ruleSet, today);
+          const note = calendarNote(ruleSet, today, calendarFor(ruleSet.id));
           return (
             <Pressable
               key={ruleSet.id}
@@ -60,6 +62,45 @@ export default function DietScreen() {
           );
         })}
       </View>
+
+      {choices.length > 0 && (
+        <View style={styles.list}>
+          <ThemedText type="smallBold" accessibilityRole="header" nativeID="calendar-label">
+            Church calendar
+          </ThemedText>
+          <ThemedText type="small" themeColor="textSecondary">
+            Pascha is the same on both. Christmas and the fixed fasts fall 13 days later on the Old Calendar. Ask your
+            parish if you aren&apos;t sure which one it keeps.
+          </ThemedText>
+          <View style={styles.list} accessibilityRole="radiogroup" accessibilityLabelledBy="calendar-label">
+            {choices.map((choice) => {
+              const selected = choice.calendar === activeCalendar;
+              return (
+                <Pressable
+                  key={choice.calendar}
+                  accessibilityRole="radio"
+                  accessibilityState={{ checked: selected }}
+                  onPress={() => setCalendar(active.ruleSet.id, choice.calendar)}>
+                  {({ pressed }) => (
+                    <ThemedView
+                      type={selected ? 'backgroundSelected' : 'backgroundElement'}
+                      style={[
+                        styles.option,
+                        { borderColor: selected ? theme.tint : 'transparent' },
+                        pressed && styles.pressed,
+                      ]}>
+                      <ThemedText type="smallBold">{choice.name}</ThemedText>
+                      <ThemedText type="small" themeColor="textSecondary">
+                        {choice.description}
+                      </ThemedText>
+                    </ThemedView>
+                  )}
+                </Pressable>
+              );
+            })}
+          </View>
+        </View>
+      )}
 
       <ThemedText type="small" themeColor="textSecondary">
         Total Fast checks ingredients against each fast&apos;s published rules. It isn&apos;t medical or religious

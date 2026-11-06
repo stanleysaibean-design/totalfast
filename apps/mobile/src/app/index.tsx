@@ -24,15 +24,15 @@ const EXAMPLES = [
 /** Type one ingredient or paste a whole label, and get a verdict for the active diet. */
 export default function CheckScreen() {
   const theme = useTheme();
-  const { diet, today } = useDiet();
+  const { diet, today, calendar } = useDiet();
   const [text, setText] = useState('');
   // A fresh object per press, so pressing Check again always recomputes.
   const [checked, setChecked] = useState<{ text: string } | null>(null);
 
   // Re-run when the diet or the day changes so the verdict never shows stale rules.
   const result = useMemo(
-    () => (checked ? checkItem({ name: 'Your check', ingredientsText: checked.text }, diet.ruleSet, today) : null),
-    [checked, diet, today],
+    () => (checked ? checkItem({ name: 'Your check', ingredientsText: checked.text }, diet.ruleSet, today, calendar) : null),
+    [checked, diet, today, calendar],
   );
 
   useEffect(() => {

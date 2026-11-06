@@ -73,6 +73,15 @@ export interface Rule {
   when?: RuleWhen;
 }
 
+/** A calendar the user can choose for a rule set. */
+export interface CalendarChoice {
+  /** Key into CALENDARS. */
+  calendar: string;
+  name: string;
+  /** One line on who keeps this calendar. */
+  description: string;
+}
+
 /** A calendar returns the named days that apply on a date (e.g. Lent Fridays). */
 export type DietCalendar = (date: Date) => string[];
 
@@ -86,6 +95,11 @@ export interface RuleSet {
   rules: Rule[];
   /** Named calendar used by `when.days` rules. Key into CALENDARS. */
   calendar?: string;
+  /**
+   * Other calendars the user may pick instead of `calendar`, such as the Old
+   * Calendar for Orthodox fasting. Pass the choice as `CheckOptions.calendar`.
+   */
+  calendarChoices?: CalendarChoice[];
   disclaimer?: string;
 }
 

@@ -23,7 +23,7 @@ const BARCODE_TYPES = ['ean13', 'ean8', 'upc_a', 'upc_e'] as const;
 /** Scan a product barcode, look up its label, and check it against the active diet. */
 export default function ScanScreen() {
   const theme = useTheme();
-  const { diet, today } = useDiet();
+  const { diet, today, calendar } = useDiet();
   const focused = useIsFocused();
   const [permission, requestPermission, getPermission] = useCameraPermissions();
   const [status, setStatus] = useState<Status>({ kind: 'scanning' });
@@ -74,8 +74,8 @@ export default function ScanScreen() {
   };
 
   const result = useMemo(
-    () => (status.kind === 'found' ? checkItem(status.item, diet.ruleSet, today) : null),
-    [status, diet, today],
+    () => (status.kind === 'found' ? checkItem(status.item, diet.ruleSet, today, calendar) : null),
+    [status, diet, today, calendar],
   );
 
   const announcement = useMemo(() => {

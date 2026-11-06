@@ -13,15 +13,18 @@ Food-compliance engine and mobile app: "can I eat this?" across food-restriction
 - `src/parse.ts`: splits printed ingredient statements (nesting, "2% or less of", allergen statements).
 - `src/resolve.ts`: exact name/alias matching after light normalization. No fuzzy matching; unknown text is `uncertain`.
 - `src/engine.ts`: the diet-agnostic engine. Every verdict names the ingredient that triggered it.
-- `src/rulesets/`: draft Daniel Fast, Whole30 and Lent (Catholic abstinence) rule sets. All are `review.status: 'draft'` until reviewed.
-- `src/calendar.ts`: Easter/Lent calendar for date-dependent rules.
+- `src/rulesets/`: draft Daniel Fast, Orthodox fasting, Whole30 and Lent (Catholic abstinence) rule sets. All are `review.status: 'draft'` until reviewed by a priest, pastor or program source.
+- `src/calendar.ts`: Western Easter/Lent and the Orthodox church calendar (Pascha, Great Lent, the Apostles', Dormition and Nativity fasts, Wednesdays and Fridays, fast-free weeks) on the New (Revised Julian) or Old (Julian) Calendar. A rule set can offer `calendarChoices`; pass the user's pick as `check(..., { calendar })`.
 - `src/openfoodfacts.ts`: maps an Open Food Facts product response to something the engine can check.
 
 Rule precedence: rules naming an ingredient beat category rules; at the same level an `allow` is an exception and wins; otherwise deny beats caution. A new diet is a new rule set file, not engine code.
+
+In the app, Lent is a free Calendar tab (Western Lent and the Orthodox seasons, with local reminders) rather than a diet in the picker.
 
 ```
 npm install                     # at the repo root
 npm test
 npm run check --workspace @total-fast/engine -- whole30 "Water, cane sugar, ghee (milk)"
 npm run check --workspace @total-fast/engine -- lent-catholic "Chicken broth, carrots" 2027-02-19
+npm run check --workspace @total-fast/engine -- orthodox "Cheese, eggs" 2026-12-25 orthodox-julian
 ```

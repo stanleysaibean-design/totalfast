@@ -6,7 +6,7 @@ import {
   TabTriggerSlotProps,
   TabListProps,
 } from 'expo-router/ui';
-import { Pressable, View, StyleSheet } from 'react-native';
+import { Pressable, View, StyleSheet, useWindowDimensions } from 'react-native';
 
 import { ThemedText } from './themed-text';
 import { ThemedView } from './themed-view';
@@ -24,6 +24,9 @@ export default function AppTabs() {
           </TabTrigger>
           <TabTrigger name="scan" href="/scan" asChild>
             <TabButton>Scan</TabButton>
+          </TabTrigger>
+          <TabTrigger name="calendar" href="/calendar" asChild>
+            <TabButton>Calendar</TabButton>
           </TabTrigger>
           <TabTrigger name="diet" href="/diet" asChild>
             <TabButton>My fast</TabButton>
@@ -49,12 +52,16 @@ export function TabButton({ children, isFocused, ...props }: TabTriggerSlotProps
 }
 
 export function CustomTabList(props: TabListProps) {
+  // Four tabs and the brand don't fit side by side on a phone-width browser.
+  const showBrand = useWindowDimensions().width >= 520;
   return (
     <View {...props} style={styles.tabListContainer}>
       <ThemedView type="backgroundElement" style={styles.innerContainer}>
-        <ThemedText type="smallBold" style={styles.brandText}>
-          Total Fast
-        </ThemedText>
+        {showBrand && (
+          <ThemedText type="smallBold" style={styles.brandText}>
+            Total Fast
+          </ThemedText>
+        )}
 
         {props.children}
 
@@ -79,6 +86,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     flexGrow: 1,
+    justifyContent: 'space-between',
     gap: Spacing.two,
     maxWidth: MaxContentWidth,
   },

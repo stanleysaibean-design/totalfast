@@ -22,6 +22,11 @@ export default function AppTabs() {
         <NativeTabs.Trigger.Icon sf="barcode.viewfinder" md="barcode_scanner" />
       </NativeTabs.Trigger>
 
+      <NativeTabs.Trigger name="calendar">
+        <NativeTabs.Trigger.Label>Calendar</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Icon sf="calendar" md="calendar_month" />
+      </NativeTabs.Trigger>
+
       <NativeTabs.Trigger name="diet">
         <NativeTabs.Trigger.Label>My fast</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon sf="list.bullet.clipboard" md="restaurant_menu" />

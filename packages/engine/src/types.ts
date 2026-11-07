@@ -52,6 +52,12 @@ export interface Ingredient {
    * unless a rule set explicitly allows them.
    */
   ambiguous?: string;
+  /**
+   * Where this entry came from, as "<dataset>:<record id>", e.g.
+   * "off:en:kale" or "usda-sr28:11233". See DATASETS for each dataset's
+   * license and version. Hand-curated seed entries carry "seed".
+   */
+  sources?: string[];
 }
 
 export type Effect = 'allow' | 'deny' | 'caution';

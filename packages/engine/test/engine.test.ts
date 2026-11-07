@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import {
-  ComplianceEngine, DATASETS, IMPORTED_INGREDIENTS, INGREDIENTS, IngredientIndex, SEED_INGREDIENTS, fastingSeasons, fromOpenFoodFacts, parseLabel, danielFast, lent, orthodox, orthodoxDay, orthodoxPascha, parseIngredients,
+  ComplianceEngine, CURATED_INGREDIENTS, DATASETS, IMPORTED_INGREDIENTS, INGREDIENTS, IngredientIndex, SEED_INGREDIENTS, fastingSeasons, fromOpenFoodFacts, parseLabel, danielFast, lent, orthodox, orthodoxDay, orthodoxPascha, parseIngredients,
   recipeLineToIngredient, westernEaster, westernLent, whole30, type RuleSet,
 } from '../src/index.ts';
 
@@ -318,5 +318,82 @@ describe('imported datasets', () => {
   it('reads E-numbers however they are printed', () => {
     for (const label of ['E330', 'E 330', 'e-330']) assert.equal(index.resolve(label)?.id, 'citric-acid', label);
     assert.equal(index.resolve('E500(ii)')?.id, 'baking-soda');
+  });
+});
+
+describe('real-label coverage', () => {
+  const index = new IngredientIndex(INGREDIENTS);
+  const ids = (text: string, rs: RuleSet = whole30, date?: string) => check(text, rs, date).findings.map((f) => f.ingredient?.id ?? `?${f.label}`);
+
+  it('reads British spellings as US ones', () => {
+    assert.equal(index.resolve('Natural flavouring')?.id, 'natural-flavors');
+    assert.equal(index.resolve('chicory root fibre')?.id, 'inulin');
+    assert.equal(index.resolve('maize starch')?.id, index.resolve('corn starch')?.id);
+    assert.equal(index.resolve('yoghurt')?.id, index.resolve('yogurt')?.id);
+  });
+
+  it('keeps a decimal comma inside its number', () => {
+    assert.deepEqual(ids('Water, almonds (2,3%), sea salt'), ['water', 'almond', 'salt']);
+  });
+
+  it('reads a list under an oil heading as oils', () => {
+    assert.deepEqual(ids('Vegetable oils (sunflower, rapeseed in varying proportions)'), ['vegetable-oil', 'sunflower-oil', 'canola-oil']);
+    assert.deepEqual(ids('Canola, sunflower and/or soybean oil'), ['canola-oil', 'sunflower-oil', 'soybean-oil']);
+    assert.equal(check('Olive and sunflower oil, salt', orthodox, '2027-03-17').verdict, 'not_compliant', 'olive oil, not olives');
+    assert.deepEqual(ids('Lecithin (sunflower)'), ['sunflower-lecithin']);
+  });
+
+  it('judges a declared source when the ingredient itself says nothing about it', () => {
+    assert.equal(check('Lactic ferments (milk), salt', danielFast).verdict, 'not_compliant');
+    assert.equal(check('Ghee (milk)', whole30).verdict, 'compliant', 'ghee already accounts for the milk');
+  });
+
+  it('asks a vague ingredient only the questions the diet cares about', () => {
+    assert.equal(check('Rye flour, water, salt', danielFast).verdict, 'uncertain', 'whole or refined matters here');
+    assert.equal(check('Rye flour, water, salt', orthodox, '2027-03-20').verdict, 'compliant', 'it does not matter on a fast day');
+    assert.equal(check('Enzymes, salt', danielFast).verdict, 'uncertain', 'could be animal-derived');
+    assert.equal(check('Enzymes, salt', whole30).verdict, 'uncertain', 'a few enzymes come from milk');
+    assert.equal(check('Enzymes, salt', orthodox, '2027-03-20').verdict, 'uncertain', 'animal origin matters on a fast day');
+  });
+
+  it('lets a listed sub-ingredient settle a vague heading', () => {
+    assert.deepEqual(ids('Starch (corn)'), ['cornstarch']);
+    assert.equal(check('Natural flavors (vanilla)', danielFast).verdict, 'uncertain', 'the list names the taste, not the carrier');
+  });
+
+  it('drops notes that are not ingredients', () => {
+    assert.deepEqual(ids('Soy lecithin (an emulsifier), pork (British or Irish), tomatoes (dried)'), ['soy-lecithin', 'pork', 'tomato']);
+    assert.deepEqual(ids('Soy lecithin, an emulsifier'), ['soy-lecithin']);
+    assert.deepEqual(ids('Ascorbic acid added as a dough conditioner, potassium sorbate preservative'), ['ascorbic-acid', 'potassium-sorbate']);
+    assert.deepEqual(ids("Pasteurized cow's milk of France, salt"), ['milk', 'salt']);
+  });
+
+  it('reads vitamins however they are listed', () => {
+    assert.deepEqual(ids('Vitamins (B2, D, E), vit. B6, vitamin B 12, thiamin (B1)', danielFast), [
+      'vitamins', 'riboflavin', 'vitamin-d', 'vitamin-e', 'vitamin-b6', 'vitamin-b12', 'thiamine-mononitrate', 'thiamine-mononitrate',
+    ]);
+    assert.deepEqual(ids('Vitamin B5 (as calcium D-pantothenate)'), ['pantothenic-acid', 'pantothenic-acid']);
+  });
+
+  it('splits joined names only when every part is known', () => {
+    assert.deepEqual(ids('Yellow 5 & 6'), ['yellow-5', 'yellow-6']);
+    assert.deepEqual(ids('Spices including paprika'), ['spices', 'paprika']);
+    assert.deepEqual(ids('Sugar glucose fructose'), ['sugar', 'glucose-fructose']);
+    assert.deepEqual(ids('Apple butter'), ['?Apple butter'], 'food words are never recombined');
+  });
+
+  it('decodes HTML entities in label text', () => {
+    assert.deepEqual(ids('FD&amp;C Red 40, FD & C Yellow 5'), ['red-40', 'yellow-5']);
+  });
+
+  it('classifies common food additives the import left open', () => {
+    assert.equal(check('Lactic acid, malic acid, magnesium oxide', whole30).verdict, 'compliant');
+    assert.equal(check('Lactic acid', danielFast).verdict, 'uncertain', 'still a preservative caution on the Daniel Fast');
+  });
+
+  it('resolves every curated spelling to its own entry', () => {
+    for (const ing of CURATED_INGREDIENTS) {
+      for (const name of [ing.name, ...(ing.aliases ?? [])]) assert.equal(index.resolve(name)?.id, ing.id, `"${name}" should resolve to ${ing.id}`);
+    }
   });
 });

@@ -6,6 +6,6 @@ export {
   CALENDARS, FAST_LEVEL_LABEL, SEASON_NAMES, fastingSeasons, orthodoxDay, orthodoxPascha, westernEaster, westernLent,
   type ChurchCalendarStyle, type FastLevel, type FastingSeason, type OrthodoxDay,
 } from './calendar.ts';
-export { DATASETS, IMPORTED_INGREDIENTS, INGREDIENTS, SEED_INGREDIENTS, type Dataset } from './data/index.ts';
+export { CURATED_INGREDIENTS, DATASETS, IMPORTED_INGREDIENTS, INGREDIENTS, SEED_INGREDIENTS, type Dataset } from './data/index.ts';
 export { RULE_SETS, danielFast, whole30, lent, orthodox } from './rulesets/index.ts';
 export { fromOpenFoodFacts, type OffProductResponse } from './openfoodfacts.ts';

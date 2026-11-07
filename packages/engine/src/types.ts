@@ -53,6 +53,14 @@ export interface Ingredient {
    */
   ambiguous?: string;
   /**
+   * What the ambiguity is about, as the categories the ingredient might turn
+   * out to belong to ("whole or refined grain" -> refined-grain). When set,
+   * the ingredient is uncertain only under rules that restrict one of these
+   * categories; a diet that doesn't ask the question judges it as usual.
+   * Unset means the doubt matters to every diet.
+   */
+  ambiguousFor?: Category[];
+  /**
    * Where this entry came from, as "<dataset>:<record id>", e.g.
    * "off:en:kale" or "usda-sr28:11233". See DATASETS for each dataset's
    * license and version. Hand-curated seed entries carry "seed".

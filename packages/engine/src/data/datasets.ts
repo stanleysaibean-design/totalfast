@@ -18,6 +18,13 @@ export const DATASETS: Dataset[] = [
     version: 'in repository',
   },
   {
+    id: 'curated',
+    name: 'Total Fast label coverage (hand-curated)',
+    url: 'packages/engine/src/data/curated.ts',
+    license: 'Project source',
+    version: 'in repository',
+  },
+  {
     id: 'off',
     name: 'Open Food Facts ingredients and additives taxonomies',
     url: 'https://github.com/openfoodfacts/openfoodfacts-server/tree/main/taxonomies',

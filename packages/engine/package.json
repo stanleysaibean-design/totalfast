@@ -8,7 +8,8 @@
   "scripts": {
     "typecheck": "tsc --noEmit",
     "test": "node --experimental-strip-types --no-warnings --test test/*.test.ts",
-    "check": "node --experimental-strip-types --no-warnings src/cli.ts"
+    "check": "node --experimental-strip-types --no-warnings src/cli.ts",
+    "import-data": "node --experimental-strip-types --no-warnings scripts/import/build.ts"
   },
   "devDependencies": {
     "@types/node": "^22.20.4",

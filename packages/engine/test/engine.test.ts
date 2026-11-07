@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import {
-  ComplianceEngine, INGREDIENTS, fastingSeasons, fromOpenFoodFacts, parseLabel, danielFast, lent, orthodox, orthodoxDay, orthodoxPascha, parseIngredients,
+  ComplianceEngine, DATASETS, IMPORTED_INGREDIENTS, INGREDIENTS, IngredientIndex, SEED_INGREDIENTS, fastingSeasons, fromOpenFoodFacts, parseLabel, danielFast, lent, orthodox, orthodoxDay, orthodoxPascha, parseIngredients,
   recipeLineToIngredient, westernEaster, westernLent, whole30, type RuleSet,
 } from '../src/index.ts';
 
@@ -268,5 +268,55 @@ describe('Open Food Facts', () => {
 describe('ingredient database', () => {
   it('has no alias that maps to two ingredients', () => {
     assert.doesNotThrow(() => new ComplianceEngine(INGREDIENTS));
+  });
+});
+
+describe('imported datasets', () => {
+  const index = new IngredientIndex(INGREDIENTS);
+
+  it('records a known source for every ingredient', () => {
+    const known = new Set(DATASETS.map((d) => d.id));
+    for (const ing of INGREDIENTS) {
+      assert.ok(ing.sources?.length, `${ing.id} has no source`);
+      for (const s of ing.sources) assert.ok(known.has(s.split(':')[0]), `${ing.id}: unknown dataset in ${s}`);
+    }
+    assert.ok(IMPORTED_INGREDIENTS.length > 3000, 'imports thousands of ingredients');
+  });
+
+  it('never takes a seed ingredient\'s spelling away from it', () => {
+    for (const seed of SEED_INGREDIENTS) {
+      for (const name of [seed.name, ...(seed.aliases ?? [])]) {
+        assert.equal(index.resolve(name)?.id, seed.id, `"${name}" should still resolve to ${seed.id}`);
+      }
+    }
+  });
+
+  it('adds spellings to seed ingredients from datasets that agree', () => {
+    assert.equal(index.resolve('curly kale')?.id, 'kale');
+    assert.ok(INGREDIENTS.find((i) => i.id === 'kale')?.sources?.includes('usda-sr28:11233'));
+  });
+
+  it('judges imported foods by their mapped categories', () => {
+    assert.equal(check('Chorizo, onions', lent, '2027-02-19').verdict, 'not_compliant');
+    assert.equal(check('Duck fat, potatoes', lent, '2027-02-19').verdict, 'uncertain', 'meat-derived fat is a caution');
+    assert.equal(check('Cream cheese, chives', orthodox, '2027-03-17').verdict, 'not_compliant');
+    assert.equal(check('Cuttlefish, garlic', orthodox, '2027-03-17').verdict, 'compliant');
+    assert.equal(check('Buttermilk', danielFast).verdict, 'not_compliant');
+    assert.equal(check('Mango, papaya, kumquat', danielFast).verdict, 'compliant');
+    assert.equal(check('Wholemeal spelt flour, water', danielFast).verdict, 'compliant');
+    assert.equal(check('Semolina, water', danielFast).verdict, 'not_compliant');
+  });
+
+  it('keeps doubtful imports uncertain instead of guessing', () => {
+    assert.equal(check('Basmati rice', danielFast).verdict, 'uncertain', 'whole or refined is not stated');
+    assert.equal(check('Cochineal', whole30).verdict, 'uncertain', 'colour from insects');
+    assert.equal(check('E 631', lent, '2027-02-19').verdict, 'uncertain', 'may be made from meat or fish');
+    assert.equal(check('Pear nectar', danielFast).verdict, 'uncertain', 'nectar usually has added sugar');
+    assert.equal(check('Chocolate', danielFast).verdict, 'uncertain', 'compound ingredients are not imported');
+  });
+
+  it('reads E-numbers however they are printed', () => {
+    for (const label of ['E330', 'E 330', 'e-330']) assert.equal(index.resolve(label)?.id, 'citric-acid', label);
+    assert.equal(index.resolve('E500(ii)')?.id, 'baking-soda');
   });
 });

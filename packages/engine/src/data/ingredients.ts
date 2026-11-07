@@ -1,10 +1,11 @@
 import type { Category, Ingredient } from '../types.ts';
 
 /**
- * Seed canonical ingredient database. This is a starting set for engine
- * development, not the production database: production data comes from
- * Open Food Facts plus a human review layer. Unknown label text resolves to
- * `uncertain`, never to a guess.
+ * Hand-curated seed ingredients. These take precedence over everything
+ * imported from public datasets (see ./imported.ts and ./index.ts): an
+ * imported entry that names a seed ingredient either agrees with it on every
+ * rule set and only adds spellings, or is dropped. Unknown label text
+ * resolves to `uncertain`, never to a guess.
  */
 const i = (id: string, categories: Category[], aliases: string[] = [], extra: Partial<Ingredient> = {}): Ingredient => ({
   id,
@@ -14,13 +15,13 @@ const i = (id: string, categories: Category[], aliases: string[] = [], extra: Pa
   ...extra,
 });
 
-export const INGREDIENTS: Ingredient[] = [
+export const SEED_INGREDIENTS: Ingredient[] = [
   // water, salt, basics
   i('water', ['water'], ['filtered water', 'purified water', 'carbonated water', 'sparkling water']),
   i('salt', ['salt'], ['sea salt', 'kosher salt', 'iodized salt', 'himalayan pink salt', 'pink salt']),
   i('vinegar', ['vinegar'], ['distilled vinegar', 'white vinegar', 'distilled white vinegar']),
   i('apple-cider-vinegar', ['vinegar'], ['cider vinegar']),
-  i('baking-soda', ['chemical-leavening'], ['sodium bicarbonate', 'bicarbonate of soda']),
+  i('baking-soda', ['chemical-leavening'], ['sodium bicarbonate', 'bicarbonate of soda', 'sodium hydrogen carbonate', 'e500ii']),
   i('baking-powder', ['chemical-leavening'], ['sodium aluminum phosphate', 'sodium acid pyrophosphate']),
   i('yeast', ['yeast'], ['active dry yeast', 'instant yeast', "baker's yeast", 'bakers yeast']),
   i('nutritional-yeast', ['yeast', 'vitamin-mineral'], ['nutritional yeast flakes', 'deactivated yeast']),
@@ -137,7 +138,7 @@ export const INGREDIENTS: Ingredient[] = [
   i('chicken-broth', ['meat-derived'], ['chicken stock', 'chicken base', 'chicken flavor']),
   i('chicken-fat', ['meat-derived', 'animal-fat']),
   i('turkey', ['meat', 'poultry']),
-  i('gelatin', ['gelatin', 'meat-derived'], ['gelatine']),
+  i('gelatin', ['gelatin', 'meat-derived'], ['gelatine', 'e441']),
   i('salmon', ['fish']),
   i('tuna', ['fish']),
   i('anchovy', ['fish'], ['anchovies']),
@@ -165,11 +166,11 @@ export const INGREDIENTS: Ingredient[] = [
   i('molasses', ['added-sugar'], ['cane molasses']),
   i('agave', ['added-sugar'], ['agave nectar', 'agave syrup']),
   i('brown-rice-syrup', ['added-sugar'], ['rice syrup']),
-  i('stevia', ['added-sugar'], ['stevia leaf extract', 'rebaudioside a', 'reb a']),
+  i('stevia', ['added-sugar'], ['stevia leaf extract', 'rebaudioside a', 'reb a', 'steviol glycosides', 'e960']),
   i('monk-fruit', ['added-sugar'], ['monk fruit extract', 'luo han guo']),
-  i('sucralose', ['artificial-sweetener', 'added-sugar']),
-  i('aspartame', ['artificial-sweetener', 'added-sugar']),
-  i('erythritol', ['sugar-alcohol', 'added-sugar']),
+  i('sucralose', ['artificial-sweetener', 'added-sugar'], ['e955']),
+  i('aspartame', ['artificial-sweetener', 'added-sugar'], ['e951']),
+  i('erythritol', ['sugar-alcohol', 'added-sugar'], ['e968']),
   i('maltodextrin', ['added-sugar', 'refined-grain']),
 
   // beverages
@@ -179,36 +180,36 @@ export const INGREDIENTS: Ingredient[] = [
   i('beer', ['alcohol', 'gluten']),
 
   // additives
-  i('citric-acid', ['preservative']),
-  i('ascorbic-acid', ['vitamin-mineral', 'preservative'], ['vitamin c']),
-  i('sodium-benzoate', ['preservative']),
-  i('potassium-sorbate', ['preservative']),
-  i('calcium-propionate', ['preservative']),
-  i('bht', ['preservative']),
-  i('sulfites', ['preservative'], ['sodium bisulfite', 'sodium metabisulfite', 'sulfur dioxide', 'potassium metabisulfite']),
-  i('msg', ['artificial-flavor'], ['monosodium glutamate']),
-  i('red-40', ['artificial-color'], ['red 40', 'fd&c red no. 40', 'red 40 lake', 'allura red']),
-  i('yellow-5', ['artificial-color'], ['yellow 5', 'fd&c yellow no. 5', 'tartrazine']),
-  i('caramel-color', ['artificial-color']),
+  i('citric-acid', ['preservative'], ['e330']),
+  i('ascorbic-acid', ['vitamin-mineral', 'preservative'], ['vitamin c', 'e300']),
+  i('sodium-benzoate', ['preservative'], ['e211']),
+  i('potassium-sorbate', ['preservative'], ['e202']),
+  i('calcium-propionate', ['preservative'], ['e282']),
+  i('bht', ['preservative'], ['butylated hydroxytoluene', 'e321']),
+  i('sulfites', ['preservative'], ['sodium bisulfite', 'sodium metabisulfite', 'sulfur dioxide', 'potassium metabisulfite', 'e220', 'e222', 'e223', 'e224']),
+  i('msg', ['artificial-flavor'], ['monosodium glutamate', 'e621']),
+  i('red-40', ['artificial-color'], ['red 40', 'fd&c red no. 40', 'red 40 lake', 'allura red', 'allura red ac', 'e129']),
+  i('yellow-5', ['artificial-color'], ['yellow 5', 'fd&c yellow no. 5', 'tartrazine', 'e102']),
+  i('caramel-color', ['artificial-color'], ['caramel colour', 'caramel coloring', 'e150', 'e150a', 'e150b', 'e150c', 'e150d']),
   i('artificial-flavor', ['artificial-flavor'], ['artificial flavors', 'artificial flavoring']),
   i('natural-flavors', ['natural-flavor'], ['natural flavor', 'natural flavoring', 'natural flavour'], {
     ambiguous: '"Natural flavors" can hide animal-derived or alcohol-based carriers; the label does not say which.',
   }),
-  i('xanthan-gum', ['thickener']),
-  i('guar-gum', ['thickener']),
-  i('gellan-gum', ['thickener']),
-  i('carrageenan', ['thickener']),
-  i('pectin', ['thickener', 'fruit'], ['fruit pectin']),
+  i('xanthan-gum', ['thickener'], ['e415']),
+  i('guar-gum', ['thickener'], ['e412']),
+  i('gellan-gum', ['thickener'], ['e418']),
+  i('carrageenan', ['thickener'], ['e407']),
+  i('pectin', ['thickener', 'fruit'], ['fruit pectin', 'pectins', 'e440']),
   i('arrowroot', ['thickener', 'root-vegetable'], ['arrowroot powder', 'arrowroot starch']),
   i('tapioca', ['thickener', 'root-vegetable'], ['tapioca starch', 'tapioca flour', 'cassava']),
-  i('mono-and-diglycerides', ['emulsifier'], ['monoglycerides', 'diglycerides']),
+  i('mono-and-diglycerides', ['emulsifier'], ['monoglycerides', 'diglycerides', 'e471']),
   i('sunflower-lecithin', ['emulsifier'], []),
   i('niacin', ['vitamin-mineral']),
   i('reduced-iron', ['vitamin-mineral'], ['iron', 'ferrous sulfate']),
   i('thiamine-mononitrate', ['vitamin-mineral'], ['thiamin mononitrate', 'thiamine', 'vitamin b1']),
-  i('riboflavin', ['vitamin-mineral'], ['vitamin b2']),
+  i('riboflavin', ['vitamin-mineral'], ['vitamin b2', 'e101']),
   i('folic-acid', ['vitamin-mineral'], ['folate']),
-  i('calcium-carbonate', ['vitamin-mineral']),
+  i('calcium-carbonate', ['vitamin-mineral'], ['e170']),
   i('vitamin-d', ['vitamin-mineral'], ['vitamin d2', 'vitamin d3']),
-  i('vitamin-e', ['vitamin-mineral', 'preservative'], ['mixed tocopherols', 'tocopherols']),
+  i('vitamin-e', ['vitamin-mineral', 'preservative'], ['mixed tocopherols', 'tocopherols', 'e306', 'e307']),
 ];

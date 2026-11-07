@@ -54,6 +54,9 @@ export function normalize(s: string): string {
 
 function* variants(s: string): Generator<string> {
   yield s;
+  // E-numbers are printed many ways: "E 330", "E-330", "E500(ii)" -> "e330", "e500ii".
+  const e = s.match(/^e\s?(\d{3,4})\s?([a-z]{0,4})$/);
+  if (e) yield `e${e[1]}${e[2]}`;
   const stripped = s.replace(QUALIFIER_RE, ' ').replace(/\s+/g, ' ').trim();
   if (stripped && stripped !== s) yield stripped;
   for (const v of [s, stripped]) {

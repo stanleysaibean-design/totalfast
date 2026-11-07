@@ -138,16 +138,21 @@ export class ComplianceEngine {
   }
 
   private judge(label: string, ingredient: Ingredient | undefined, rules: Rule[]): IngredientFinding {
-    if (!ingredient) {
-      return { label, verdict: 'uncertain', reason: `"${label}" is not in the ingredient database yet.` };
-    }
-    const byId = rules.filter((r) => r.ingredients?.includes(ingredient.id));
-    const byCategory = rules.filter((r) => r.categories?.some((c) => ingredient.categories.includes(c)));
-    const rule = pick(byId) ?? pick(byCategory);
-    if (rule) return { label, ingredient, verdict: EFFECT_VERDICT[rule.effect], reason: rule.reason };
-    if (ingredient.ambiguous) return { label, ingredient, verdict: 'uncertain', reason: ingredient.ambiguous };
-    return { label, ingredient, verdict: 'compliant', reason: 'No rule restricts this ingredient.' };
+    return judgeIngredient(label, ingredient, rules);
   }
+}
+
+/** Judges one label entry against a list of already-active rules. */
+export function judgeIngredient(label: string, ingredient: Ingredient | undefined, rules: Rule[]): IngredientFinding {
+  if (!ingredient) {
+    return { label, verdict: 'uncertain', reason: `"${label}" is not in the ingredient database yet.` };
+  }
+  const byId = rules.filter((r) => r.ingredients?.includes(ingredient.id));
+  const byCategory = rules.filter((r) => r.categories?.some((c) => ingredient.categories.includes(c)));
+  const rule = pick(byId) ?? pick(byCategory);
+  if (rule) return { label, ingredient, verdict: EFFECT_VERDICT[rule.effect], reason: rule.reason };
+  if (ingredient.ambiguous) return { label, ingredient, verdict: 'uncertain', reason: ingredient.ambiguous };
+  return { label, ingredient, verdict: 'compliant', reason: 'No rule restricts this ingredient.' };
 }
 
 function pick(rules: Rule[]): Rule | undefined {

@@ -3,6 +3,7 @@ import { AccessibilityInfo, Pressable, StyleSheet, TextInput, View } from 'react
 
 import { Button } from '@/components/button';
 import { DietChip } from '@/components/diet-chip';
+import { ProductSearch } from '@/components/product-search';
 import { Screen } from '@/components/screen';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -15,6 +16,7 @@ import { useDiet } from '@/state/diet';
 const EXAMPLES = [
   { label: 'Honey', text: 'Honey' },
   { label: 'Ghee', text: 'Ghee' },
+  { label: 'Doritos', text: 'Doritos' },
   {
     label: 'Sandwich bread',
     text: 'Enriched wheat flour (wheat flour, niacin, reduced iron, thiamine mononitrate, riboflavin, folic acid), water, sugar, yeast, soybean oil, contains 2% or less of: salt, calcium propionate (to preserve freshness), soy lecithin. Contains: wheat, soy.',
@@ -35,9 +37,16 @@ export default function CheckScreen() {
     [checked, diet, today, calendar],
   );
 
+  // One name the database doesn't know ("doritos") is most likely a product
+  // or brand: offer a product search instead of a bare "can't confirm".
+  const productQuery =
+    checked && result && !/[,;\n(]/.test(checked.text) && checked.text.length <= 60 && result.findings.every((f) => !f.ingredient)
+      ? checked.text
+      : null;
+
   useEffect(() => {
-    if (result) AccessibilityInfo.announceForAccessibility(`${VERDICT_LABEL[result.verdict]}. ${result.summary}`);
-  }, [result]);
+    if (result && !productQuery) AccessibilityInfo.announceForAccessibility(`${VERDICT_LABEL[result.verdict]}. ${result.summary}`);
+  }, [result, productQuery]);
 
   const run = (value = text) => {
     const trimmed = value.trim();
@@ -52,7 +61,7 @@ export default function CheckScreen() {
 
       <View style={styles.form}>
         <ThemedText type="small" themeColor="textSecondary" nativeID="ingredients-label">
-          Type an ingredient, or paste the ingredient list from a label.
+          Type an ingredient or a product name, or paste the ingredient list from a label.
         </ThemedText>
         <TextInput
           accessibilityLabelledBy="ingredients-label"
@@ -63,7 +72,7 @@ export default function CheckScreen() {
             // An edited list no longer matches the verdict on screen.
             setChecked(null);
           }}
-          placeholder="e.g. honey, or oats, dates, almonds"
+          placeholder="e.g. honey, doritos, or oats, dates, almonds"
           placeholderTextColor={theme.textSecondary}
           multiline
           autoCapitalize="none"
@@ -76,7 +85,9 @@ export default function CheckScreen() {
         <Button label="Check" onPress={() => run()} disabled={!text.trim()} />
       </View>
 
-      {result ? (
+      {productQuery && checked ? (
+        <ProductSearch key={JSON.stringify(checked)} query={productQuery} />
+      ) : result ? (
         <VerdictCard result={result} ruleSet={diet.ruleSet} />
       ) : (
         <View style={styles.examples}>

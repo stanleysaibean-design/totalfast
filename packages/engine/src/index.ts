@@ -8,4 +8,6 @@ export {
 } from './calendar.ts';
 export { CURATED_INGREDIENTS, DATASETS, IMPORTED_INGREDIENTS, INGREDIENTS, SEED_INGREDIENTS, type Dataset } from './data/index.ts';
 export { RULE_SETS, danielFast, whole30, lent, orthodox } from './rulesets/index.ts';
-export { fromOpenFoodFacts, type OffProductResponse } from './openfoodfacts.ts';
+export {
+  fromOpenFoodFacts, productsFromSearch, type OffProductResponse, type OffSearchProduct, type OffSearchResponse, type ProductMatch,
+} from './openfoodfacts.ts';

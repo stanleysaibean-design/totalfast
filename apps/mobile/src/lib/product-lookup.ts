@@ -1,4 +1,11 @@
-import { fromOpenFoodFacts, type Checkable, type OffProductResponse } from '@total-fast/engine';
+import {
+  fromOpenFoodFacts,
+  productsFromSearch,
+  type Checkable,
+  type OffProductResponse,
+  type OffSearchResponse,
+  type ProductMatch,
+} from '@total-fast/engine';
 import { Platform } from 'react-native';
 
 export type LookupResult =
@@ -63,6 +70,56 @@ export async function lookupBarcode(barcode: string): Promise<LookupResult> {
     return {
       kind: 'error',
       barcode,
+      message: aborted
+        ? "The product database didn't answer in time. Check your connection and try again."
+        : "Couldn't reach the product database. Check your connection and try again.",
+    };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+export type SearchResult =
+  | { kind: 'found'; query: string; products: ProductMatch[] }
+  | { kind: 'none'; query: string }
+  | { kind: 'error'; query: string; message: string };
+
+const SEARCH_FIELDS = 'code,product_name,product_name_en,brands,quantity,ingredients_text,ingredients_text_en';
+
+/**
+ * Searches Open Food Facts by product or brand name ("doritos"), most-scanned
+ * first. Open Food Facts limits search to about 10 requests a minute per
+ * user, so call this when the user asks, never on each keystroke.
+ */
+export async function searchProducts(rawQuery: string): Promise<SearchResult> {
+  const query = rawQuery.trim();
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
+  try {
+    const params = new URLSearchParams({
+      search_terms: query,
+      search_simple: '1',
+      action: 'process',
+      json: '1',
+      page_size: '20',
+      sort_by: 'unique_scans_n',
+      fields: SEARCH_FIELDS,
+    });
+    const res = await fetch(`https://world.openfoodfacts.org/cgi/search.pl?${params}`, {
+      signal: controller.signal,
+      headers: Platform.OS === 'web' ? undefined : { 'User-Agent': USER_AGENT },
+    });
+    if (res.status === 429) {
+      return { kind: 'error', query, message: 'The product database is busy. Wait a minute and try again.' };
+    }
+    if (!res.ok) return { kind: 'error', query, message: `The product database returned an error (${res.status}).` };
+    const products = productsFromSearch((await res.json()) as OffSearchResponse);
+    return products.length ? { kind: 'found', query, products } : { kind: 'none', query };
+  } catch {
+    const aborted = controller.signal.aborted;
+    return {
+      kind: 'error',
+      query,
       message: aborted
         ? "The product database didn't answer in time. Check your connection and try again."
         : "Couldn't reach the product database. Check your connection and try again.",

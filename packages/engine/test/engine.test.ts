@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import {
-  ComplianceEngine, CURATED_INGREDIENTS, DATASETS, IMPORTED_INGREDIENTS, INGREDIENTS, IngredientIndex, SEED_INGREDIENTS, fastingSeasons, fromOpenFoodFacts, parseLabel, danielFast, lent, orthodox, orthodoxDay, orthodoxPascha, parseIngredients,
+  ComplianceEngine, CURATED_INGREDIENTS, DATASETS, IMPORTED_INGREDIENTS, INGREDIENTS, IngredientIndex, SEED_INGREDIENTS, fastingSeasons, fromOpenFoodFacts, productsFromSearch, parseLabel, danielFast, lent, orthodox, orthodoxDay, orthodoxPascha, parseIngredients,
   recipeLineToIngredient, westernEaster, westernLent, whole30, type RuleSet,
 } from '../src/index.ts';
 
@@ -262,6 +262,26 @@ describe('Open Food Facts', () => {
     assert.equal(item?.name, 'Test Salsa');
     assert.equal(item?.ingredientsText, 'Tomatoes, onions, jalapeno peppers, salt');
     assert.equal(fromOpenFoodFacts({ status: 0 }), undefined);
+  });
+
+  it('turns a brand search into products to pick from, each checked on its own label', () => {
+    const matches = productsFromSearch({
+      products: [
+        { code: '1', brands: 'Crunchos', product_name: 'Sea Salt', quantity: '200 g', ingredients_text: 'Corn, sunflower oil, salt.' },
+        { code: '2', brands: 'Crunchos, SnackCo', product_name: 'Crunchos Cheese Blast' },
+        { code: '3', brands: 'Crunchos', product_name: 'Cheese Blast', ingredients_text_en: 'Corn, vegetable oil, cheddar cheese (milk), salt.' },
+        { code: '1', brands: 'Crunchos', product_name: 'Sea Salt duplicate' },
+        { code: '4' },
+      ],
+    });
+    assert.deepEqual(matches.map((m) => [m.barcode, m.name, !!m.item]), [
+      ['1', 'Crunchos Sea Salt', true],
+      ['3', 'Crunchos Cheese Blast', true],
+      ['2', 'Crunchos Cheese Blast', false],
+    ]);
+    assert.equal(matches[0].quantity, '200 g');
+    assert.equal(engine.check(matches[1].item!, orthodox, { date: day('2027-03-17') }).verdict, 'not_compliant');
+    assert.deepEqual(productsFromSearch({}), []);
   });
 });
 
